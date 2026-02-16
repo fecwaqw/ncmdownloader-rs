@@ -45,12 +45,10 @@ pub fn write_metadata(extension: &str, path: &Path, info: &TrackInfo) -> Result<
         ));
     }
     tag.insert_text(ItemKey::AlbumTitle, info.album.to_string());
-    let picture = Picture::new_unchecked(
-        PictureType::CoverFront,
-        Some(info.cover_mime_type.clone()),
-        None,
-        info.cover_data.to_vec(),
-    );
+    let picture = Picture::unchecked(info.cover_data.to_vec())
+        .mime_type(info.cover_mime_type.clone())
+        .pic_type(PictureType::CoverFront)
+        .build();
     tag.set_picture(0, picture);
     tagged_file.save_to_path(path, WriteOptions::default())?;
     Ok(())
