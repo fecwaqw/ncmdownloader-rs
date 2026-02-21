@@ -6,7 +6,7 @@ const BITRATE_LEVELS: [&str; 8] = [
     "higer", "exhigh", "lossless", "hires", "jyeffect", "sky", "dolby", "jymaster",
 ];
 
-const DEFAULT_CONFIG: &'static str = r##"max_bitrate_level: "exhigh"
+const DEFAULT_CONFIG: &str = r##"max_bitrate_level: "exhigh"
 #max_bitrate_level:下载歌曲的最高质量，不填写内容默认为可下载的最高质量
 #可填内容:
 # higher => 较高

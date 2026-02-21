@@ -1,6 +1,6 @@
 use unicode_segmentation::UnicodeSegmentation;
 
-const SPECIAL_CHARS: [&'static str; 9] = ["/", ":", "*", "?", "\"", "<", ">", "|", "\\"];
+const SPECIAL_CHARS: [&str; 9] = ["/", ":", "*", "?", "\"", "<", ">", "|", "\\"];
 
 /// 清理文件名中的非法字符
 pub fn sanitize_filename(filename: &str) -> String {

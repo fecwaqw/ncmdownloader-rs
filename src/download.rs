@@ -7,7 +7,7 @@ use std::time::Duration;
 use tokio::io::{AsyncRead, ReadBuf};
 use url::Url;
 
-const USER_AGENT: &'static str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
+const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
 const CHUNK_SIZE: usize = 8192;
 pub struct DownloadOptions {
     /// Maximum number of retry attempts
@@ -61,7 +61,7 @@ pub async fn download_file(url: &Url, output_path: &Path, options: DownloadOptio
     loop {
         match download_with_client(&client, url, output_path, CHUNK_SIZE).await {
             Ok(bytes) => return Ok(bytes),
-            Err(e) if retries < options.max_retries as usize => {
+            Err(e) if retries < options.max_retries => {
                 retries += 1;
                 log::warn!(
                     "Download failed (attempt {}/{}): {}, retrying in {:?}",
@@ -184,8 +184,7 @@ impl AsyncRead for ByteStreamWrapper<'_> {
                     self.buffer.extend_from_slice(&chunk);
                 }
                 Poll::Ready(Some(Err(e))) => {
-                    return Poll::Ready(Err(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    return Poll::Ready(Err(std::io::Error::other(
                         format!("Stream error: {}", e),
                     )));
                 }

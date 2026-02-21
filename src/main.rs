@@ -28,7 +28,7 @@ use crate::{
 
 const MAX_CONS: usize = 0;
 const MAX_NAME_LENGTH: usize = 200;
-const CTCODE: &'static str = "86";
+const CTCODE: &str = "86";
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let config_path: &Path = Path::new("config.yml");
@@ -47,7 +47,7 @@ async fn main() -> anyhow::Result<()> {
             }
         },
     };
-    let config = Arc::new(match Config::load(&content.as_str()) {
+    let config = Arc::new(match Config::load(content.as_str()) {
         Ok(v) => v,
         Err(e) => match e {
             ConfigError::Parse(_) => {
@@ -160,7 +160,7 @@ async fn main() -> anyhow::Result<()> {
                 song_info.name,
                 match song_info.translated_name {
                     Some(v) => format!("({})", v),
-                    None => format!(""),
+                    None => String::new(),
                 },
                 song_info.singer.join(", ")
             );
@@ -231,26 +231,23 @@ async fn main() -> anyhow::Result<()> {
             if config.download_lyrics {
                 let lyric_file_name = format!("{}.lrc", song_file_base_name);
                 let lyric_path = folder_path.join(lyric_file_name);
-                match api.lock().await.song_lyric(song_info.id).await {
-                    Ok(v) => {
-                        let lyric_content = v.lyric.join("\n");
-                        let Ok(mut writer) = tokio::fs::File::create(lyric_path)
-                            .await
-                            .map(tokio::io::BufWriter::new)
-                        else {
-                            failed_lyrics.lock().await.push(song_file_base_name);
-                            return;
-                        };
-                        let Ok(_) = writer.write_all(lyric_content.as_bytes()).await else {
-                            failed_lyrics.lock().await.push(song_file_base_name);
-                            return;
-                        };
-                        let Ok(_) = writer.flush().await else {
-                            failed_lyrics.lock().await.push(song_file_base_name);
-                            return;
-                        };
-                    }
-                    Err(_) => {}
+                if let Ok(v) = api.lock().await.song_lyric(song_info.id).await {
+                    let lyric_content = v.lyric.join("\n");
+                    let Ok(mut writer) = tokio::fs::File::create(lyric_path)
+                        .await
+                        .map(tokio::io::BufWriter::new)
+                    else {
+                        failed_lyrics.lock().await.push(song_file_base_name);
+                        return;
+                    };
+                    let Ok(_) = writer.write_all(lyric_content.as_bytes()).await else {
+                        failed_lyrics.lock().await.push(song_file_base_name);
+                        return;
+                    };
+                    let Ok(_) = writer.flush().await else {
+                        failed_lyrics.lock().await.push(song_file_base_name);
+                        return;
+                    };
                 };
             }
             progress_bar.inc(1);
@@ -263,14 +260,14 @@ async fn main() -> anyhow::Result<()> {
     let _ = cli::print("下载完成！").await;
     {
         let failed = failed_songs.lock().await;
-        if failed.len() > 0 {
-            let _ = cli::print(&format!("歌曲下载失败：{}", failed.join(", ")));
+        if !failed.is_empty() {
+            let _ = cli::print(&format!("歌曲下载失败：{}", failed.join(", "))).await;
         }
     }
     {
         let failed = failed_lyrics.lock().await;
-        if failed.len() > 0 {
-            let _ = cli::print(&format!("歌词下载失败：{}", failed.join(", ")));
+        if !failed.is_empty() {
+            let _ = cli::print(&format!("歌词下载失败：{}", failed.join(", "))).await;
         }
     }
     Ok(())
